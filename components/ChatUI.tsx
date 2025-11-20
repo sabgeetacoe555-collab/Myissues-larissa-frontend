@@ -1,0 +1,241 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import MessageBubble from './MessageBubble';
+import ChatInput from './ChatInput';
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  model?: string;
+  error?: boolean;
+}
+
+export default function ChatUI() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async (content: string) => {
+    if (!content.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: content }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get response');
+      }
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.data.response || 'No response received',
+        timestamp: new Date(),
+        model: data.data.model || 'Larissa 70B',
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: err instanceof Error ? err.message : 'An unexpected error occurred',
+        timestamp: new Date(),
+        error: true,
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClearChat = () => {
+    setMessages([]);
+    setError(null);
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Larissa Interface</h1>
+              <p className="text-xs text-gray-500">Powered by Larissa 70B Router</p>
+            </div>
+          </div>
+          {messages.length > 0 && (
+            <button
+              onClick={handleClearChat}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Clear Chat
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Messages Area */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-20">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-10 h-10 text-primary-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800">
+                Welcome to Larissa Interface
+              </h2>
+              <p className="text-gray-600 max-w-md">
+                Start a conversation with Larissa 70B Router. Your messages will be
+                intelligently routed to specialized models for optimal responses.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 w-full max-w-3xl">
+                <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-semibold text-gray-800 mb-2">💬 General Chat</h3>
+                  <p className="text-sm text-gray-600">
+                    Ask anything and get intelligent responses
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-semibold text-gray-800 mb-2">💼 Accounting</h3>
+                  <p className="text-sm text-gray-600">
+                    Specialized finance and tax assistance
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-semibold text-gray-800 mb-2">🔍 Web Search</h3>
+                  <p className="text-sm text-gray-600">
+                    Real-time information retrieval
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <MessageBubble key={message.id} message={message} />
+              ))}
+              {isLoading && (
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <span className="text-sm">Larissa is thinking...</span>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="max-w-5xl mx-auto px-4 pb-2">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start space-x-2">
+            <svg
+              className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-800">Error</p>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Input Area */}
+      <div className="bg-white border-t border-gray-200 shadow-lg">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
+        </div>
+      </div>
+    </div>
+  );
+}
