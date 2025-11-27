@@ -13,10 +13,13 @@ export interface Message {
   error?: boolean;
 }
 
+type AgentType = 'chat' | 'router' | 'accountant' | 'browser' | 'gen-computer' | 'mathematician' | 'child-agent';
+
 export default function ChatUI() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<AgentType>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -42,7 +45,8 @@ export default function ChatUI() {
     setError(null);
 
     try {
-      const response = await fetch('/api/chat', {
+      const endpoint = `/api/${selectedAgent}`;
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,12 +60,16 @@ export default function ChatUI() {
         throw new Error(data.error || 'Failed to get response');
       }
 
+      // Handle different response formats
+      const responseContent = data.data?.response || data.data?.result || data.data || 'No response received';
+      const modelName = data.agent || data.data?.model || data.data?.agent || selectedAgent;
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.data.response || 'No response received',
+        content: responseContent,
         timestamp: new Date(),
-        model: data.data.model || 'Larissa 70B',
+        model: modelName,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -90,36 +98,64 @@ export default function ChatUI() {
     <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Larissa AI</h1>
+                <p className="text-xs text-gray-500">Multi-Agent Intelligence Platform</p>
+              </div>
+            </div>
+            {messages.length > 0 && (
+              <button
+                onClick={handleClearChat}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Larissa Interface</h1>
-              <p className="text-xs text-gray-500">Powered by Larissa 70B Router</p>
-            </div>
+                Clear Chat
+              </button>
+            )}
           </div>
-          {messages.length > 0 && (
-            <button
-              onClick={handleClearChat}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Clear Chat
-            </button>
-          )}
+          
+          {/* Agent Selector */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'chat', name: 'Chat', icon: '💬' },
+              { id: 'router', name: 'Router', icon: '🔀' },
+              { id: 'accountant', name: 'Accountant', icon: '💼' },
+              { id: 'browser', name: 'Browser', icon: '🔍' },
+              { id: 'gen-computer', name: 'Gen Computer', icon: '💻' },
+              { id: 'mathematician', name: 'Mathematician', icon: '📐' },
+              { id: 'child-agent', name: 'Child Agent', icon: '🤖' },
+            ].map((agent) => (
+              <button
+                key={agent.id}
+                onClick={() => setSelectedAgent(agent.id as AgentType)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  selectedAgent === agent.id
+                    ? 'bg-primary-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <span className="mr-1">{agent.icon}</span>
+                {agent.name}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -144,29 +180,47 @@ export default function ChatUI() {
                 </svg>
               </div>
               <h2 className="text-2xl font-semibold text-gray-800">
-                Welcome to Larissa Interface
+                Welcome to Larissa AI
               </h2>
               <p className="text-gray-600 max-w-md">
-                Start a conversation with Larissa 70B Router. Your messages will be
-                intelligently routed to specialized models for optimal responses.
+                Select an AI agent above and start a conversation. Your messages will be
+                routed to specialized models for optimal responses.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 w-full max-w-3xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 w-full max-w-4xl">
                 <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
                   <h3 className="font-semibold text-gray-800 mb-2">💬 General Chat</h3>
                   <p className="text-sm text-gray-600">
-                    Ask anything and get intelligent responses
+                    Conversational AI with intelligent routing
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-                  <h3 className="font-semibold text-gray-800 mb-2">💼 Accounting</h3>
+                  <h3 className="font-semibold text-gray-800 mb-2">💼 Accountant</h3>
                   <p className="text-sm text-gray-600">
-                    Specialized finance and tax assistance
+                    Finance, tax, and accounting expertise
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
                   <h3 className="font-semibold text-gray-800 mb-2">🔍 Web Search</h3>
                   <p className="text-sm text-gray-600">
                     Real-time information retrieval
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-semibold text-gray-800 mb-2">💻 Gen Computer</h3>
+                  <p className="text-sm text-gray-600">
+                    Code generation and computational tasks
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-semibold text-gray-800 mb-2">📐 Mathematician</h3>
+                  <p className="text-sm text-gray-600">
+                    Complex math and problem-solving
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-semibold text-gray-800 mb-2">🤖 Child Agent</h3>
+                  <p className="text-sm text-gray-600">
+                    Auto-routes to best specialized agent
                   </p>
                 </div>
               </div>
