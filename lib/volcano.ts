@@ -102,10 +102,16 @@ async function volcanoFetch<T>(
  * Routes the message to the appropriate specialized model
  */
 export async function sendToRouter(message: string): Promise<VolcanoResponse> {
-  return await volcanoFetch<VolcanoResponse>('/api/router', {
+  const result = await volcanoFetch<VolcanoResponse>('/api/router', {
     message,
     context: 'larissa-router',
   });
+  
+  if (result instanceof ReadableStream) {
+    throw new VolcanoSDKError('Unexpected stream response from router endpoint');
+  }
+  
+  return result;
 }
 
 /**
@@ -113,9 +119,15 @@ export async function sendToRouter(message: string): Promise<VolcanoResponse> {
  * Direct interaction with the language model
  */
 export async function sendToLLM(message: string): Promise<VolcanoResponse> {
-  return await volcanoFetch<VolcanoResponse>('/api/llm', {
+  const result = await volcanoFetch<VolcanoResponse>('/api/llm', {
     message,
   });
+  
+  if (result instanceof ReadableStream) {
+    throw new VolcanoSDKError('Unexpected stream response from LLM endpoint');
+  }
+  
+  return result;
 }
 
 /**
@@ -123,10 +135,16 @@ export async function sendToLLM(message: string): Promise<VolcanoResponse> {
  * Specialized for accounting, finance, and tax-related queries
  */
 export async function sendToAccountant(message: string): Promise<VolcanoResponse> {
-  return await volcanoFetch<VolcanoResponse>('/api/accountant', {
+  const result = await volcanoFetch<VolcanoResponse>('/api/accountant', {
     message,
     context: 'accounting-finance',
   });
+  
+  if (result instanceof ReadableStream) {
+    throw new VolcanoSDKError('Unexpected stream response from Accountant endpoint');
+  }
+  
+  return result;
 }
 
 /**
@@ -134,10 +152,16 @@ export async function sendToAccountant(message: string): Promise<VolcanoResponse
  * Enables web search and information retrieval
  */
 export async function sendToBrowserTool(query: string): Promise<VolcanoResponse> {
-  return await volcanoFetch<VolcanoResponse>('/api/browser', {
+  const result = await volcanoFetch<VolcanoResponse>('/api/browser', {
     message: query,
     context: 'web-search',
   });
+  
+  if (result instanceof ReadableStream) {
+    throw new VolcanoSDKError('Unexpected stream response from Browser Tool endpoint');
+  }
+  
+  return result;
 }
 
 /**
