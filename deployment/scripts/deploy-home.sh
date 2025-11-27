@@ -21,7 +21,7 @@ NC='\033[0m' # No Color
 APP_NAME="larissa-frontend"
 DOMAIN="larissaai.ca"
 DEPLOY_DIR="$HOME/larissa-app"
-SOURCE_DIR="$HOME/larissa"
+SOURCE_DIR="$HOME/Myissues-larissa-frontend"
 NODE_VERSION="18"
 
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
