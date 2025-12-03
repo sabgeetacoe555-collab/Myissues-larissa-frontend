@@ -113,7 +113,7 @@ chown -R www-data:www-data ${DEPLOY_DIR}
 chown -R www-data:www-data /var/log/pm2
 print_status "Deployment directory created: ${DEPLOY_DIR}"
 echo ""
-
+            
 # Step 7: Clone or update repository
 print_info "Step 7/12: Cloning/updating repository..."
 if [ -d "${DEPLOY_DIR}/.git" ]; then

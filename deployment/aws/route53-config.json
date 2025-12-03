@@ -1,0 +1,31 @@
+{
+  "Comment": "Create A records for larissaai.ca production deployment",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "larissaai.ca",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "3.98.96.136"
+          }
+        ]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "www.larissaai.ca",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "3.98.96.136"
+          }
+        ]
+      }
+    }
+  ]
+}
